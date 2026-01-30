@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>療癒陪伴：30天療癒小助手 (每天100句寵物療癒)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FFFBF5;
+        }
+        .font-serif-tc {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .modal-active {
+            display: flex !important;
+        }
+        #photo-preview {
+            position: relative;
+            overflow: hidden;
+        }
+        #photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        #photo-preview img.active {
+            opacity: 1;
+        }
+        .photo-indicator {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.5);            
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            z-index: 10;
+            backdrop-filter: blur(2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div class="container mx-auto px-4 py-6 max-w-2xl flex-grow">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-orange-600 mb-4">狗狗的療癒陪伴</h1>
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <label class="block text-sm font-medium text-gray-700 mb-2">狗狗的名字</label>
+                <input type="text" id="dog-name-input" placeholder="例如：旺財" 
+                       class="w-full px-4 py-2 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400">
+                
+                <div class="mt-4 flex flex-col items-center">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">上傳狗狗照片 (可多張)</label>
+                    <div id="photo-preview" class="w-32 h-32 bg-orange-50 rounded-full flex items-center justify-center border-4 border-orange-200 overflow-hidden mb-2">
+                        <span class="text-orange-300 text-xs text-center p-2 font-medium">點擊上傳<br>狗狗照片<br>(可多張)</span>
+                    </div>
+                    <input type="file" id="photo-upload" accept="image/*" multiple class="hidden">
+                    <button onclick="document.getElementById('photo-upload').click()" 
+                            class="px-4 py-1 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition mb-1">選擇照片</button>
+                    <button onclick="clearPhotos()" 
+                            class="px-3 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500 transition">清除所有照片</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 mb-6 shadow-lg">
+                <div class="text-center mb-4">
+                    <h2 class="text-lg font-semibold text-orange-700 mb-2">今天的溫暖訊息</h2>
+                    <p id="daily-quote" class="text-xl font-serif-tc text-gray-800 leading-relaxed italic">
+                        <!-- 動態填充 -->
+                    </p>
+                </div>
+                <div class="flex items-center justify-between text-sm text-orange-600 mt-4">
+                    <span>療癒之旅進度</span>
+                    <span id="day-counter">第 1 天 / 30 天</span>
+                </div>
+                <div class="w-full bg-orange-200 rounded-full h-3 mt-2 overflow-hidden">
+                    <div id="progress-bar" class="bg-orange-500 h-3 rounded-full transition-all duration-500" style="width: 3.33%;"></div>
+                </div>
+            </section>
+
+            <section class="bg-blue-50 rounded-xl p-5 mb-6 shadow">
+                <h3 class="text-md font-semibold text-blue-700 mb-3">本週行動建議</h3>
+                <p id="weekly-task" class="text-gray-700 leading-relaxed">
+                    <!-- 動態填充 -->
+                </p>
+            </section>
+
+            <section class="text-center">
+                <button onclick="toggleModal(true)" 
+                        class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition transform hover:scale-105">
+                    需要緊急安慰
+                </button>
+            </section>
+        </main>
+    </div>
+
+    <footer class="bg-orange-100 py-4 text-center text-sm text-gray-600 mt-auto">
+        <p>資料儲存於瀏覽器本地 | <button onclick="resetApp()" class="text-orange-600 hover:underline font-medium">重新開始30天計畫</button></p>
+    </footer>
+
+    <div id="comfort-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl scale-95 opacity-0 transition-all duration-300">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">給你的安慰</h2>
+            <div class="space-y-4">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-blue-800 mb-2">深呼吸練習</h3>
+                    <p class="text-gray-700 text-sm">慢慢吸氣4秒，憋氣4秒，呼氣4秒。重複3次。</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-green-800 mb-2">感官接地</h3>
+                    <p class="text-gray-700 text-sm">說出5樣你看到的、4樣你摸到的、3樣你聽到的、2樣你聞到的、1樣你嘗到的。</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-purple-800 mb-2">對自己說</h3>
+                    <p class="text-gray-700 text-sm italic">"我正在經歷失去的痛苦，這很正常。我會慢慢好起來。"</p>
+                </div>
+            </div>
+            <button onclick="toggleModal(false)" 
+                    class="mt-6 w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 rounded-lg transition">
+                關閉
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const QUOTES = [
+            "你的狗狗知道你有多愛牠，這份愛永遠不會消失。",
+            "悲傷是愛的證明，允許自己感受它。",
+            "每一個美好的回憶都是永恆的禮物。",
+            "你給了牠最好的生活，這是最珍貴的愛。",
+            "失去寵物的痛苦，證明了你們之間深厚的連結。",
+            "在最黑暗的時刻，記得那些快樂的瞬間。",
+            "牠會希望你記住快樂，而不是只有悲傷。",
+            "療癒不是忘記，而是學會帶著愛繼續生活。",
+            "你的心有足夠的空間容納悲傷和感恩。",
+            "每一次想起牠，都是一次愛的延續。",
+            "你不需要急著好起來，慢慢來沒關係。",
+            "牠陪伴你的時光，已經永遠刻在心裡。",
+            "允許自己哭泣，淚水是心靈的療癒。",
+            "你給予的愛從未白費，牠感受到了。",
+            "失去不會抹去那些珍貴的回憶。",
+            "你的狗狗會永遠活在你的心中。",
+            "悲傷會慢慢轉化，但愛會永存。",
+            "你做得很好，牠知道你盡力了。",
+            "每一個寵物都是獨一無二的，你們的連結也是。",
+            "時間不會治癒一切，但會讓你學會共存。",
+            "牠離開了你的視線，但從未離開你的心。",
+            "你有權利為失去而悲傷，這是正常的。",
+            "那些快樂的日子是真實存在的，沒有人能奪走。",
+            "你的狗狗帶給你的改變，會一直陪著你。",
+            "允許自己慢慢療癒，不要給自己壓力。",
+            "每一個微笑的回憶都是牠留給你的禮物。",
+            "你不是一個人，很多人都理解這種痛苦。",
+            "失去寵物是真正的失去，你的悲傷是合理的。",
+            "牠的愛會化作力量，支持你繼續前行。",
+            "你們共度的時光是無價的寶藏。",
+            "悲傷會起起伏伏，這都是正常的過程。",
+            "你可以同時感到悲傷和感恩，兩者並不衝突。",
+            "牠希望你幸福，這是牠最後的願望。",
+            "你給了牠一個充滿愛的家，這是最大的禮物。",
+            "每一次心痛都在提醒你，你曾經如此深愛。",
+            "你的狗狗不會希望你永遠沉浸在悲傷中。",
+            "允許自己有好日子和壞日子，這都沒關係。",
+            "你們的連結超越了生死，永遠存在。",
+            "失去的痛苦，是因為擁有過真摯的愛。",
+            "你的心會慢慢學會如何繼續愛牠。",
+            "那些一起散步的日子，永遠值得珍惜。",
+            "你的狗狗教會你的事，會一直影響你。",
+            "悲傷是愛的另一面，接受它。",
+            "你不需要對任何人解釋你的悲傷。",
+            "牠的離去不是你的錯，你已經做得很好了。",
+            "每一個寵物都會在我們心中留下獨特的印記。",
+            "你有權利用自己的方式悲傷。",
+            "那些溫暖的擁抱和舔舐，都刻在心裡了。",
+            "你的狗狗很幸運能有你這樣的主人。",
+            "療癒是一條曲折的道路，不是直線前進。",
+            "你可以永遠愛著牠，同時也繼續生活。",
+            "牠帶給你的快樂是真實的，痛苦也是。",
+            "你們的故事是美麗的，即使結局令人心碎。",
+            "允許自己在悲傷中尋找意義和成長。",
+            "你的狗狗會希望你記住那些快樂的瞬間。",
+            "失去不會讓愛變少，只會讓它變得不同。",
+            "你不需要急著放下，慢慢來沒關係。",
+            "牠離開的方式不會改變你們共度的美好時光。",
+            "你的心有足夠的空間容納新的愛和舊的回憶。",
+            "每一個寵物都是生命中的老師。",
+            "你的悲傷證明了你是個有愛的人。",
+            "牠的生命因為有你而完整。",
+            "你可以隨時想念牠，這是你的權利。",
+            "那些傻傻的瞬間，現在變成了珍貴的回憶。",
+            "你的狗狗不會責怪你，牠只有愛。",
+            "悲傷會改變形狀，但不會完全消失，這沒關係。",
+            "你給了牠最好的生活，這是無可置疑的。",
+            "每一次想起牠，都是一次心靈的對話。",
+            "你不需要為悲傷設定期限。",
+            "牠的離去讓你學會了更深刻的愛。",
+            "你們的連結是永恆的，沒有終點。",
+            "允許自己在悲傷中找到力量。",
+            "你的狗狗希望你能再次微笑。",
+            "失去的痛苦會慢慢轉化為溫柔的思念。",
+            "你不是在失去後才開始愛牠，而是一直在愛。",
+            "每一個寵物都在我們心中種下了愛的種子。",
+            "你可以永遠為牠保留一個特別的位置。",
+            "牠的離去不代表你們的故事結束了。",
+            "你有權利用自己的步調療癒。",
+            "那些簡單的日常，現在變成了無價的回憶。",
+            "你的狗狗很感激你給牠的每一刻愛。",
+            "悲傷是愛的迴聲，讓它自然流淌。",
+            "你不需要對抗悲傷，只需要與它共處。",
+            "牠帶給你的改變是永久的禮物。",
+            "你們的愛超越了時間和空間。",
+            "允許自己記住所有的細節，好的和壞的。",
+            "你的心會慢慢學會如何繼續前行。",
+            "牠的生命因為你而充滿意義。",
+            "你不需要隱藏你的悲傷，它是真實的。",
+            "每一次心痛都在見證你們深厚的連結。",
+            "你的狗狗會永遠是你生命中的一部分。",
+            "失去教會我們珍惜，也教會我們堅強。",
+            "你可以同時向前看，也回頭望。",
+            "牠希望你能找到平靜和快樂。",
+            "你們共同創造的回憶是永恆的寶藏。",
+            "悲傷不會永遠這麼強烈，相信時間。",
+            "你的愛給了牠最好的一生。",
+            "每一個寵物都在教我們如何去愛。",
+            "你不需要完美，只需要真誠地愛過。"
+        ];
+
+        const WEEKLY_TASKS = {
+            week1: "本週任務：每天寫下一件你和狗狗的美好回憶，可以是一個小瞬間或一個特別的日子。",
+            week2: "本週任務：整理狗狗的照片，選出5張最喜歡的，製作一個數位相簿或列印出來。",
+            week3: "本週任務：給自己一個允許悲傷的時刻，每天15分鐘，專注於感受和釋放情緒。",
+            week4: "本週任務：做一件狗狗會喜歡的事情來紀念牠，比如捐款給動物收容所或幫助其他寵物。"
+        };
+
+        let state = {
+            dogName: '',
+            dogPhoto: null,
+            dogPhotos: [],
+            startDate: new Date().toISOString()
+        };
+
+        let currentPhotoIndex = 0;
+        let photoInterval = null;
+
+        function init() {
+            const saved = localStorage.getItem('healing_companion_data');
+            if (saved) {
+                state = JSON.parse(saved);
+                if (!state.dogPhotos) state.dogPhotos = state.dogPhoto ? [state.dogPhoto] : [];
+            }
+            
+            document.getElementById('dog-name-input').value = state.dogName || '';
+            document.getElementById('dog-name-input').addEventListener('input', (e) => {
+                state.dogName = e.target.value;
+                localStorage.setItem('healing_companion_data', JSON.stringify(state));
+                render();
+            });
+
+            document.getElementById('photo-upload').addEventListener('change', handlePhotoUpload);
+            
+            render();
+            startPhotoSlideshow();
+        }
+
+        function render() {
+            const now = new Date();
+            const start = new Date(state.startDate);
+            const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+            const cappedDays = Math.min(daysPassed, 30);
+            
+            const hourOfDay = now.getHours();
+            const quoteIndex = hourOfDay % QUOTES.length;
+            let quote = QUOTES[quoteIndex];
+            
+            if (state.dogName) {
+                quote = quote.replace('你的狗狗', state.dogName).replace('牠', state.dogName);
+            }
+            
+            document.getElementById('daily-quote').textContent = quote;
+            document.getElementById('day-counter').textContent = `第 ${cappedDays} 天 / 30 天`;
+            
+            const progress = (cappedDays / 30) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            
+            const week = Math.ceil(cappedDays / 7);
+            const taskKey = `week${Math.min(week, 4)}`;
+            document.getElementById('weekly-task').textContent = WEEKLY_TASKS[taskKey];
+            
+            if (state.dogPhotos && state.dogPhotos.length > 0) {
+                const container = document.getElementById('photo-preview');
+                container.innerHTML = '';
+                
+                state.dogPhotos.forEach((photoData, index) => {
+                    const img = document.createElement('img');
+                    img.src = photoData;
+                    img.alt = '狗狗照片';
+                    if (index === currentPhotoIndex) img.classList.add('active');
+                    container.appendChild(img);
+                });
+                
+                if (state.dogPhotos.length > 1) {
+                    const indicator = document.createElement('span');
+                    indicator.className = 'photo-indicator';
+                    indicator.textContent = `${currentPhotoIndex + 1}/${state.dogPhotos.length}`;
+                    container.appendChild(indicator);
+                }
+            }
+        }
+
+        function startPhotoSlideshow() {
+            if (photoInterval) clearInterval(photoInterval);
+            
+            if (!state.dogPhotos || state.dogPhotos.length <= 1) return;
+            
+            photoInterval = setInterval(() => {
+                const container = document.getElementById('photo-preview');
+                const images = container.querySelectorAll('img');
+                
+                images[currentPhotoIndex].classList.remove('active');
+                currentPhotoIndex = (currentPhotoIndex + 1) % state.dogPhotos.length;
+                images[currentPhotoIndex].classList.add('active');
+                
+                const indicator = container.querySelector('.photo-indicator');
+                if (indicator) {
+                    indicator.textContent = `${currentPhotoIndex + 1}/${state.dogPhotos.length}`;
+                }
+            }, 3000);
+        }
+
+        function handlePhotoUpload(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            const existingCount = state.dogPhotos ? state.dogPhotos.length : 0;
+            
+            const promises = files.map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxW = 400;
+                            const maxH = 400;
+                            
+                            let finalW = img.width;
+                            let finalH = img.height;
+                            
+                            if (img.width > maxW || img.height > maxH) {
+                                const scale = Math.min(maxW / img.width, maxH / img.height);
+                                finalW = img.width * scale;
+                                finalH = img.height * scale;
+                            }
+                            
+                            canvas.width = finalW;
+                            canvas.height = finalH;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, finalW, finalH);
+                            
+                            resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        };
+                        img.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            Promise.all(promises).then(dataUrls => {
+                if (!state.dogPhotos) state.dogPhotos = [];
+                state.dogPhotos = [...state.dogPhotos, ...dataUrls];
+                
+                if (state.dogPhotos.length > 0) state.dogPhoto = state.dogPhotos[0];
+                
+                try {
+                    localStorage.setItem('healing_companion_data', JSON.stringify(state));
+                    currentPhotoIndex = state.dogPhotos.length - 1;
+                    render();
+                    startPhotoSlideshow();
+                } catch (e) {
+                    alert("儲存空間不足，無法儲存所有照片。建議清除或重新上傳較少的照片。");
+                    state.dogPhotos = state.dogPhotos.slice(0, existingCount);
+                }
+            });
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('comfort-modal');
+            const content = modal.querySelector('div');
+            
+            if (show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            } else {
+                modal.classList.add('opacity-0');
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.remove('flex');
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function clearPhotos() {
+            if (confirm("確定要清除所有照片嗎？這無法復原。")) {
+                state.dogPhotos = [];
+                state.dogPhoto = null;
+                localStorage.setItem('healing_companion_data', JSON.stringify(state));
+                document.getElementById('photo-preview').innerHTML = '<span class="text-orange-300 text-xs text-center p-2 font-medium">點擊上傳<br>狗狗照片<br>(可多張)</span>';
+                render();
+            }
+        }
+
+        function resetApp() {
+            if (confirm("確定要重新開始 30 天計畫嗎？這將重設開始日期與天數。")) {
+                state.startDate = new Date().toISOString();
+                localStorage.setItem('healing_companion_data', JSON.stringify(state));
+                location.reload();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
