@@ -275,11 +275,15 @@
         function render() {
             const now = new Date();
             const start = new Date(state.startDate);
-            const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+            
+            // 修正：設定為當地時區的凌晨0點來計算天數
+            const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const daysPassed = Math.floor((nowDay - startDay) / (1000 * 60 * 60 * 24)) + 1;
             const cappedDays = Math.min(daysPassed, 30);
             
-            const hourOfDay = now.getHours();
-            const quoteIndex = hourOfDay % QUOTES.length;
+            // 改為每次訪問隨機顯示一句（基於時間戳記）
+            const quoteIndex = Math.floor(Math.random() * QUOTES.length);
             let quote = QUOTES[quoteIndex];
             
             if (state.dogName) {
